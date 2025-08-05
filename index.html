@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Da Link Checker! :3</title>
+  <style>
+    :root {
+      --bg: #0e0e10;
+      --card: #1a1a1d;
+      --accent: #7be0ad;
+      --danger: #ff6b6b;
+      --text: #f5f5f5;
+      --muted: #999;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      background: var(--card);
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 1.8rem;
+    }
+
+    p {
+      margin-bottom: 25px;
+      color: var(--muted);
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+      background: #2b2b2f;
+      color: var(--text);
+    }
+
+    button {
+      background: var(--accent);
+      color: #000;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      transition: 0.2s ease;
+    }
+
+    button:hover {
+      background: #66d1a0;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .safe {
+      color: var(--accent);
+    }
+
+    .danger {
+      color: var(--danger);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Put Da Link Below UwU</h1>
+    <p>Put da link below and shall see if its safe or not (writing this while being tired, tis 6am</p>
+
+    <input type="text" id="urlInput" placeholder="https://example.com" />
+    <button onclick="checkURL()">Check Link</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const API_KEY = 'ad42eb4bf080f8d7333394206b541d7b3b7715181faabdee15ba990451aa5ae0'; // Put her API key here
+
+    async function checkURL() {
+      const url = document.getElementById("urlInput").value.trim();
+      const resultDiv = document.getElementById("result");
+      resultDiv.textContent = 'Checking...';
+      resultDiv.className = '';
+
+      if (!url) {
+        resultDiv.textContent = 'Please enter a URL.';
+        return;
+      }
+
+      try {
+        // Step 1: Submit URL to VirusTotal
+        const submitRes = await fetch("https://www.virustotal.com/api/v3/urls", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "x-apikey": API_KEY
+          },
+          body: "url=" + encodeURIComponent(url)
+        });
+
+        const submitData = await submitRes.json();
+        const analysisId = submitData.data.id;
+
+        // Step 2: Get analysis result
+        const analysisRes = await fetch(`https://www.virustotal.com/api/v3/analyses/${analysisId}`, {
+          headers: {
+            "x-apikey": API_KEY
+          }
+        });
+
+        const analysisData = await analysisRes.json();
+        const stats = analysisData.data.attributes.stats;
+        const { malicious = 0, suspicious = 0 } = stats;
+
+        if (malicious > 0 || suspicious > 0) {
+          resultDiv.innerHTML = `⚠️ This link <span class="danger">might NOT be safe</span><br>Malicious: ${malicious}, Suspicious: ${suspicious}`;
+          resultDiv.className = 'danger';
+        } else {
+          resultDiv.innerHTML = `✅ This link <span class="safe">appears safe</span>`;
+          resultDiv.className = 'safe';
+        }
+      } catch (err) {
+        console.error(err);
+        resultDiv.textContent = 'Error checking the link.';
+      }
+    }
+  </script>
+</body>
+</html>
